@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sat-Shield Alerts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+
+</head>
+<body>
+  <h1>Real-Time Solar Flare Alerts</h1>
+  <ul id="alerts"></ul>
+  <div style="width: 80%; margin: auto;">
+  <canvas id="solarFlareChart" height="100"></canvas>
+</div>
+
+<div style="margin-top: 20px; width: 80%; margin: auto;">
+  <label for="locationInput">Enter Location:</label>
+  <input type="text" id="locationInput" placeholder="City or Coordinates" />
+  <button onclick="submitLocation()">Submit</button>
+</div>
+
+
+<script>
+  async function fetchFluxData() {
+   
+    const response = await fetch('/flux_data');
+    const data = await response.json();
+    return data;
+  }
+
+  async function createChart() {
+    const fluxData = await fetchFluxData();
+
+    
+    const labels = fluxData.map(item => new Date(item.time).toLocaleString());
+    const dataPoints = fluxData.map(item => item.flux);
+
+   
+    const ctx = document.getElementById('solarFlareChart').getContext('2d');
+
+   
+    const solarFlareChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Solar Flare Intensity',
+          data: dataPoints,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          fill: false,
+          tension: 0.1
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Time'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Flux'
+            }
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+
+  
+  window.onload = function() {
+    fetchAlerts();
+    createChart();
+  };
+</script>
+
+
+  <script>
+    async function fetchAlerts() {
+      const response = await fetch('/alerts');
+      const alerts = await response.json();
+      const list = document.getElementById('alerts');
+      list.innerHTML = '';
+      alerts.forEach(alert => {
+        const item = document.createElement('li');
+        item.textContent = alert;
+        list.appendChild(item);
+      });
+    }
+
+    
+    setInterval(fetchAlerts, 30000);
+    fetchAlerts();  
+  </script>
+</body>
+</html>
